@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using UltralightNet;
 using UltralightNet.Platform;
 using UltralightNet.Platform.HighPerformance;
 using Vintagestory.API.Client;
@@ -24,7 +24,23 @@ namespace BetterBooks
             api.Logger.Notification("dispose");
         }
 
-        public ULFileSystem? GetNativeStruct() => null;
+        public ULFileSystem? GetNativeStruct()
+        {
+            unsafe
+            {
+                return new ULFileSystem
+                {
+                    FileExists = (delegate* unmanaged[Cdecl]<ULString*, bool>)
+                        Marshal.GetFunctionPointerForDelegate((ULString* path) => FileExists(path->ToString())),
+                    GetFileMimeType = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)
+                        Marshal.GetFunctionPointerForDelegate((ULString* path) => new ULString(GetFileMimeType(path->ToString())).Allocate()),
+                    GetFileCharset = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)
+                        Marshal.GetFunctionPointerForDelegate((ULString* path) => new ULString(GetFileCharset(path->ToString())).Allocate()),
+                    OpenFile = (delegate* unmanaged[Cdecl]<ULString*, ULBuffer>)
+                        Marshal.GetFunctionPointerForDelegate((ULString* path) => OpenFile(path->ToString()))
+                };
+            }
+        }
 
         public bool FileExists(string path)
         {
@@ -36,44 +52,16 @@ namespace BetterBooks
         public string GetFileCharset(string path)
         {
             api.Logger.Notification("GetFileCharset: " + path);
-            throw new NotImplementedException();
+            return "utf-8";
         }
 
         public string GetFileMimeType(string path)
         {
             api.Logger.Notification("GetFileMimeType: " + path);
-            // no.
-            return "text/utf8";
+            return "text/html";
         }
 
         public ULBuffer OpenFile(string path)
-        {
-            api.Logger.Notification("OpenFile: " + path);
-
-            var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
-
-            ULBuffer buffer;
-            nint ptr = 0;
-
-            try
-            {
-                ptr = Marshal.AllocHGlobal(data.Data.Length);
-                Marshal.Copy(data.Data, 0, ptr, data.Data.Length);
-
-                unsafe
-                {
-                    buffer = ULBuffer.CreateFromDataCopy((void*)ptr, (uint)data.Data.Length);
-                }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
-
-            return buffer;
-        }
-
-        public ULBuffer OpenFile3(string path)
         {
             var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
 
@@ -81,34 +69,9 @@ namespace BetterBooks
             {
                 fixed (void* ptr = &data.Data[0])
                 {
-                    return ULBuffer.CreateFromDataCopy(ptr, (uint)data.Data.Length);
+                    return ULBuffer.CreateFromDataCopy(ptr, (nuint)data.Data.Length);
                 }
             }
-        }
-
-        public ULBuffer OpenFile2(string path)
-        {
-            var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
-
-            ULBuffer buffer;
-            nint ptr = 0;
-
-            try
-            {
-                ptr = Marshal.AllocHGlobal(data.Data.Length);
-                Marshal.Copy(data.Data, 0, ptr, data.Data.Length);
-
-                unsafe
-                {
-                    buffer = ULBuffer.CreateFromDataCopy((void*)ptr, (uint)data.Data.Length);
-                }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
-
-            return buffer;
         }
     }
 }

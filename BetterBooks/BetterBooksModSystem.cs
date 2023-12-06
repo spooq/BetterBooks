@@ -72,7 +72,7 @@ namespace BetterBooks
             view.OnFinishLoading += (_, _, _) =>
             {
                 api.Logger.Notification($"OnFinishLoading");
-                state = LoadingState.Waiting;
+                state = LoadingState.Loaded;
             };
 
             view.OnFailLoading +=
@@ -86,17 +86,12 @@ namespace BetterBooks
                     api.Logger.Error($"{errorDomain} : {errorCode} : {description}");
                 };
 
-            api.Event.RegisterGameTickListener(ClientOnGameTick, 50);
+            api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
 
             try
             {
-                //view.URL = "https://google.com";
                 view.URL = "file:///epub.html";
-                //view.HTML = "<html>hello world</html>";
-                renderer.Update();
-                renderer.Render();
-                writeBitmap();
-                state = LoadingState.Loaded;
+                state = LoadingState.Start;
             }
             catch (Exception ex)
             {
@@ -107,39 +102,45 @@ namespace BetterBooks
         public void ClientOnGameTick(float dt)
         {
             capi.Logger.Notification("ClientOnGameTick");
-            string ex = null;
+            string jsEx = null;
             string result = null;
 
-            switch (state)
+            try
             {
-                case LoadingState.Start:
-                    state = LoadingState.Starting;
-                    break;
+                switch (state)
+                {
+                    case LoadingState.Start:
+                        state = LoadingState.Starting;
+                        break;
 
-                case LoadingState.Starting:
-                    renderer.Update();
-                    break;
+                    case LoadingState.Starting:
+                        renderer.Update();
+                        break;
 
-                case LoadingState.Waiting:
-                    renderer.Update();
-                    result = view.EvaluateScript("ready", out ex);
-                    if (result == "loaded")
-                        state = LoadingState.Loaded;
-                    break;
+                    case LoadingState.Waiting:
+                        renderer.Update();
+                        result = view.EvaluateScript("ready", out jsEx);
+                        if (result == "loaded")
+                            state = LoadingState.Loaded;
+                        break;
 
-                case LoadingState.Loaded:
-                    renderer.Update();
-                    renderer.Render();
-                    writeBitmap();
-                    state = LoadingState.Loaded;
-                    break;
+                    case LoadingState.Loaded:
+                        renderer.Render();
+                        writeBitmap();
+                        state = LoadingState.Done;
+                        break;
 
-                case LoadingState.Done:
-                    break;
+                    case LoadingState.Done:
+                        break;
 
-                case LoadingState.Error:
-                    break;
-            };
+                    case LoadingState.Error:
+                        break;
+                };
+            }
+            catch(Exception e) { capi.Logger.Error(e.Message); }
+
+            if (!String.IsNullOrEmpty(jsEx))
+                capi.Logger.Error(jsEx);
         }
 
         public void writeBitmap()
