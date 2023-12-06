@@ -1,0 +1,28 @@
+﻿<html>
+<head>
+    <script src="file:///jszip.min.js"></script>
+    <script src="file:///epub.js"></script>
+    <link rel="stylesheet" type="text/css" href="file:///examples.css">
+</head>
+<body>
+    <div id="viewer" class="spreads"></div>
+
+    <script>
+        var ready = "starting";
+
+        var book = ePub("file:///pg164-images-3.epub");
+
+        var rendition = book.renderTo("viewer", { spread: "always", width: "100%", height: "100%" });
+
+        book.ready.then(function () {
+            rendition.display(book.coverUrl);
+        });
+
+        rendition.on("displayed", function (section) {
+            ready = "loaded";
+        });
+
+    </script>
+
+</body>
+</html>
