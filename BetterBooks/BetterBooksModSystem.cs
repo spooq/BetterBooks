@@ -52,6 +52,7 @@ namespace BetterBooks
             EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
             AppCoreMethods.SetPlatformFontLoader();
+            //AppCoreMethods.ulEnableDefaultLogger("log.txt");
 
             logger = new VSLogger(capi);
             ULPlatform.Logger = logger;
@@ -72,7 +73,7 @@ namespace BetterBooks
             view.OnFinishLoading += (_, _, _) =>
             {
                 api.Logger.Notification($"OnFinishLoading");
-                state = LoadingState.Loaded;
+                state = LoadingState.Waiting;
             };
 
             view.OnFailLoading +=
@@ -90,7 +91,8 @@ namespace BetterBooks
 
             try
             {
-                view.URL = "file:///epub.html";
+                //view.URL = "file:///epub.html";
+                view.URL = "https://google.com";
                 state = LoadingState.Start;
             }
             catch (Exception ex)
@@ -101,7 +103,6 @@ namespace BetterBooks
 
         public void ClientOnGameTick(float dt)
         {
-            capi.Logger.Notification("ClientOnGameTick");
             string jsEx = null;
             string result = null;
 
@@ -110,14 +111,17 @@ namespace BetterBooks
                 switch (state)
                 {
                     case LoadingState.Start:
+                        capi.Logger.Notification("ClientOnGameTick Start");
                         state = LoadingState.Starting;
                         break;
 
                     case LoadingState.Starting:
+                        capi.Logger.Notification("ClientOnGameTick Starting");
                         renderer.Update();
                         break;
 
                     case LoadingState.Waiting:
+                        capi.Logger.Notification("ClientOnGameTick Waiting");
                         renderer.Update();
                         result = view.EvaluateScript("ready", out jsEx);
                         if (result == "loaded")
@@ -125,15 +129,18 @@ namespace BetterBooks
                         break;
 
                     case LoadingState.Loaded:
+                        capi.Logger.Notification("ClientOnGameTick Loaded");
                         renderer.Render();
                         writeBitmap();
                         state = LoadingState.Done;
                         break;
 
                     case LoadingState.Done:
+                        capi.Logger.Notification("ClientOnGameTick Loaded");
                         break;
 
                     case LoadingState.Error:
+                        capi.Logger.Notification("ClientOnGameTick Error");
                         break;
                 };
             }

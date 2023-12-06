@@ -1,4 +1,6 @@
-﻿using UltralightNet;
+﻿using System.Runtime.InteropServices;
+using UltralightNet;
+using UltralightNet.Platform.HighPerformance;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
@@ -15,6 +17,17 @@ namespace BetterBooks
 
         public void Dispose()
         {
+        }
+        public ULLogger? GetNativeStruct()
+        {
+            unsafe
+            {
+                return new ULLogger
+                {
+                    LogMessage = (delegate* unmanaged[Cdecl]<ULLogLevel, ULString*, void>)
+                        Marshal.GetFunctionPointerForDelegate((ULLogLevel logLevel, ULString* message) => LogMessage(logLevel, message->ToString()))
+                };
+            }
         }
 
         public void LogMessage(ULLogLevel logLevel, string message)
