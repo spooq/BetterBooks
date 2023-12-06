@@ -91,8 +91,8 @@ namespace BetterBooks
 
             try
             {
-                //view.URL = "file:///epub.html";
-                view.URL = "https://google.com";
+                view.URL = "file:///epub.html";
+                //view.URL = "https://google.com";
                 state = LoadingState.Start;
             }
             catch (Exception ex)
