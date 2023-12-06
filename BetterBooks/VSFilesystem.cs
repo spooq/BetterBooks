@@ -65,6 +65,8 @@ namespace BetterBooks
         {
             var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
 
+            api.Logger.Notification("OpenFile: " + path + " length=" + data.Data.Length);
+
             unsafe
             {
                 fixed (void* ptr = &data.Data[0])
