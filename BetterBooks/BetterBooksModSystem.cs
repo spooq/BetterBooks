@@ -90,12 +90,13 @@ namespace BetterBooks
 
             try
             {
+                //view.URL = "https://google.com";
                 view.URL = "file:///epub.html";
                 //view.HTML = "<html>hello world</html>";
                 renderer.Update();
                 renderer.Render();
                 writeBitmap();
-                state = LoadingState.Done;
+                state = LoadingState.Loaded;
             }
             catch (Exception ex)
             {
@@ -127,9 +128,10 @@ namespace BetterBooks
                     break;
 
                 case LoadingState.Loaded:
+                    renderer.Update();
                     renderer.Render();
                     writeBitmap();
-                    state = LoadingState.Done;
+                    state = LoadingState.Loaded;
                     break;
 
                 case LoadingState.Done:

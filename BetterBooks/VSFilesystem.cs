@@ -28,22 +28,28 @@ namespace BetterBooks
 
         public bool FileExists(string path)
         {
-            return api.Assets.Exists(new AssetLocation(modID, "config/" + path.ToLower()));
+            bool result = api.Assets.Exists(new AssetLocation(modID, "config/" + path.ToLower()));
+            api.Logger.Notification("FileExists: " + path + " - " + (result ? "yes" : "no"));
+            return result;
         }
 
         public string GetFileCharset(string path)
         {
+            api.Logger.Notification("GetFileCharset: " + path);
             throw new NotImplementedException();
         }
 
         public string GetFileMimeType(string path)
         {
+            api.Logger.Notification("GetFileMimeType: " + path);
             // no.
             return "text/utf8";
         }
 
-        public ULBuffer OpenFilea(string path)
+        public ULBuffer OpenFile(string path)
         {
+            api.Logger.Notification("OpenFile: " + path);
+
             var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
 
             ULBuffer buffer;
@@ -67,7 +73,7 @@ namespace BetterBooks
             return buffer;
         }
 
-        public ULBuffer OpenFile(string path)
+        public ULBuffer OpenFile3(string path)
         {
             var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
 
