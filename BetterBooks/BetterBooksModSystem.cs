@@ -52,6 +52,7 @@ namespace BetterBooks
             EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
             AppCoreMethods.SetPlatformFontLoader();
+            AppCoreMethods.ulEnablePlatformFileSystem(".");
             //AppCoreMethods.ulEnableDefaultLogger("log.txt");
 
             logger = new VSLogger(capi);

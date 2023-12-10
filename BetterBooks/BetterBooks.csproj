@@ -5,6 +5,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\$(Configuration)\Mods\mod</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

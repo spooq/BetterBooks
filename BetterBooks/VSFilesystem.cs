@@ -26,6 +26,8 @@ namespace BetterBooks
 
         public ULFileSystem? GetNativeStruct()
         {
+            api.Logger.Notification("GetNativeStruct");
+
             unsafe
             {
                 return new ULFileSystem

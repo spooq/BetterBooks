@@ -17,7 +17,9 @@ namespace BetterBooks
 
         public void Dispose()
         {
+            api.Logger.Notification("dispose");
         }
+
         public ULLogger? GetNativeStruct()
         {
             unsafe
