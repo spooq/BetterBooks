@@ -47,7 +47,7 @@ namespace BetterBooks
             // Sneak in native dlls
             EmbeddedDllClass.ExtractEmbeddedDlls();
             EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
-            EmbeddedDllClass.LoadDll("WebCore.dll", api);
+            EmbeddedDllClass.LoadDll("WebCore.dll", api); //test
             EmbeddedDllClass.LoadDll("Ultralight.dll", api);
             EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
