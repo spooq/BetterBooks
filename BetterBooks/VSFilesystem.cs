@@ -11,7 +11,6 @@ namespace BetterBooks
     {
         public ICoreAPI api;
 
-        private string domain;
         private string modID;
 
         private ULFileSystem filesystemDelegates;
