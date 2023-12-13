@@ -53,14 +53,10 @@ namespace BetterBooks
 
             AppCoreMethods.SetPlatformFontLoader();
 
-            //AppCoreMethods.ulEnablePlatformFileSystem(".");
-            //AppCoreMethods.ulEnableDefaultLogger("log.txt");
-
             ULPlatform.Logger = new VSLogger(capi);
             ULPlatform.FileSystem = new VSFilesystem(capi, Mod.Info.ModID);
 
-            var cfg = new ULConfig();
-            renderer = ULPlatform.CreateRenderer(cfg);
+            renderer = ULPlatform.CreateRenderer(new ULConfig());
 
             var viewCfg = new ULViewConfig()
             {
@@ -68,17 +64,22 @@ namespace BetterBooks
                 EnableImages = true,
                 EnableJavaScript = true,
             };
-            view = renderer.CreateView(1200, 1000);
+            view = renderer.CreateView(1200, 1000, viewCfg);
+
+            view.OnBeginLoading += (_, _, _) =>
+            {
+                api.Logger.Notification($"OnBeginLoading");
+            };
+
+            view.OnDOMReady += (_, _, _) =>
+            {
+                api.Logger.Notification($"OnDOMReady");
+            };
 
             view.OnFinishLoading += (_, _, _) =>
             {
                 api.Logger.Notification($"OnFinishLoading");
                 state = LoadingState.Waiting;
-            };
-
-            view.OnBeginLoading += (_, _, _) =>
-            {
-                api.Logger.Notification($"OnBeginLoading");
             };
 
             view.OnFailLoading +=
@@ -92,17 +93,8 @@ namespace BetterBooks
                     api.Logger.Error($"{errorDomain} : {errorCode} : {description}");
                 };
 
-            try
-            {
-                //view.URL = "file:///simple.html";
-                view.URL = "https://google.com";
-            }
-            catch (Exception e)
-            {
-                api.Logger.Error(e.Message);
-            }
-
             state = LoadingState.Start;
+            view.URL = "file:///simple.html";
 
             api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
         }
@@ -131,7 +123,7 @@ namespace BetterBooks
                         renderer.Update();
                         result = view.EvaluateScript("ready", out jsEx);
                         //if (result == "loaded")
-                            state = LoadingState.Loaded;
+                        state = LoadingState.Loaded;
                         break;
 
                     case LoadingState.Loaded:
@@ -150,10 +142,10 @@ namespace BetterBooks
                         break;
                 };
             }
-            catch(Exception e) { capi.Logger.Error(e.Message); }
+            catch (Exception e) { capi.Logger.Error(e.Message); }
 
             if (!String.IsNullOrEmpty(jsEx))
-                capi.Logger.Error("Javascript error: " +jsEx);
+                capi.Logger.Error("Javascript error: " + jsEx);
         }
 
         public void writeBitmap()
