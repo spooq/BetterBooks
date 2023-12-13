@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using UltralightNet;
 using UltralightNet.AppCore;
 using Vintagestory.API.Client;
@@ -28,10 +27,6 @@ namespace BetterBooks
         LoadingState state = LoadingState.Starting;
 
         public ICoreClientAPI capi;
-        private SafeHandle hUlCore;
-        private SafeHandle hWebCore;
-        private SafeHandle hUl;
-        private SafeHandle hAppCore;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
@@ -49,16 +44,17 @@ namespace BetterBooks
 
             api.Assets.Reload(AssetCategory.config);
 
+
             // Sneak in native dlls
             EmbeddedDllClass.ExtractEmbeddedDlls();
-            hUlCore = EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
-            hWebCore = EmbeddedDllClass.LoadDll("WebCore.dll", api);
-            hUl = EmbeddedDllClass.LoadDll("Ultralight.dll", api);
-            hAppCore = EmbeddedDllClass.LoadDll("AppCore.dll", api);
+            EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
+            EmbeddedDllClass.LoadDll("WebCore.dll", api);
+            EmbeddedDllClass.LoadDll("Ultralight.dll", api);
+            EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
             AppCoreMethods.SetPlatformFontLoader();
             AppCoreMethods.ulEnablePlatformFileSystem(".");
-            //AppCoreMethods.ulEnableDefaultLogger("log.txt");
+            ///AppCoreMethods.ulEnableDefaultLogger("log.txt");
 
             logger = new VSLogger(capi);
             ULPlatform.Logger = logger;
@@ -93,33 +89,17 @@ namespace BetterBooks
                     api.Logger.Error($"{errorDomain} : {errorCode} : {description}");
                 };
 
-            foreach (System.Diagnostics.ProcessModule mod in System.Diagnostics.Process.GetCurrentProcess().Modules)
-                mod.Disposed += (_, _) =>
-                {
-                    capi.Logger.Debug($"DISPOSED {mod.FileName} {mod.ModuleName} {mod.EntryPointAddress}");
-                };
+            view.URL = "file:///epub.html";
+            //view.URL = "https://google.com";
+            state = LoadingState.Start;
 
             api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
-
-            try
-            {
-                view.URL = "file:///epub.html";
-                //view.URL = "https://google.com";
-                state = LoadingState.Start;
-            }
-            catch (Exception ex)
-            {
-                api.Logger.Error(ex.ToString());
-            }
         }
 
         public void ClientOnGameTick(float dt)
         {
             string jsEx = null;
             string result = null;
-
-            foreach (System.Diagnostics.ProcessModule mod in System.Diagnostics.Process.GetCurrentProcess().Modules)
-                capi.Logger.Debug($"{mod.FileName} {mod.ModuleName} {mod.EntryPointAddress}");
 
             try
             {
@@ -139,7 +119,7 @@ namespace BetterBooks
                         capi.Logger.Notification("ClientOnGameTick Waiting");
                         renderer.Update();
                         result = view.EvaluateScript("ready", out jsEx);
-                        if (result == "loaded")
+                        //if (result == "loaded")
                             state = LoadingState.Loaded;
                         break;
 

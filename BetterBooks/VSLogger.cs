@@ -10,9 +10,13 @@ namespace BetterBooks
     {
         public ICoreAPI api;
 
+        public ULLogger loggerDelegates;
+
         public VSLogger(ICoreClientAPI api)
         {
             this.api = api;
+
+            loggerDelegates = GetNativeStruct();
         }
 
         public void Dispose()
@@ -20,7 +24,7 @@ namespace BetterBooks
             api.Logger.Notification("dispose");
         }
 
-        public ULLogger? GetNativeStruct()
+        public ULLogger GetNativeStruct()
         {
             unsafe
             {

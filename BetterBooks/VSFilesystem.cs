@@ -10,24 +10,27 @@ namespace BetterBooks
     public class VSFilesystem : IFileSystem
     {
         public ICoreAPI api;
-        public string domain;
+
+        private string domain;
         private string modID;
+
+        private ULFileSystem filesystemDelegates;
 
         public VSFilesystem(ICoreClientAPI api, string modID)
         {
             this.api = api;
             this.modID = modID;
+
+            filesystemDelegates = GetNativeStruct();
         }
 
         public void Dispose()
         {
-            api.Logger.Notification("dispose");
+            api.Logger.Notification("VSFilesystem.Dispose()");
         }
 
-        public ULFileSystem? GetNativeStruct()
+        public ULFileSystem GetNativeStruct()
         {
-            api.Logger.Notification("GetNativeStruct");
-
             unsafe
             {
                 return new ULFileSystem
