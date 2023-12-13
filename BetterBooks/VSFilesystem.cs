@@ -68,8 +68,8 @@ namespace BetterBooks
 
         public ULBuffer OpenFile(string path)
         {
+            api.Logger.Notification("OpenFile: " + path);
             var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
-
             api.Logger.Notification("OpenFile: " + path + " length=" + data.Data.Length);
 
             unsafe

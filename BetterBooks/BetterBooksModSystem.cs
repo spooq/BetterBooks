@@ -44,7 +44,6 @@ namespace BetterBooks
 
             api.Assets.Reload(AssetCategory.config);
 
-
             // Sneak in native dlls
             EmbeddedDllClass.ExtractEmbeddedDlls();
             EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
@@ -54,8 +53,8 @@ namespace BetterBooks
 
             AppCoreMethods.SetPlatformFontLoader();
             AppCoreMethods.ulEnablePlatformFileSystem(".");
-            ///AppCoreMethods.ulEnableDefaultLogger("log.txt");
 
+            //AppCoreMethods.ulEnableDefaultLogger("log.txt");
             logger = new VSLogger(capi);
             ULPlatform.Logger = logger;
             fs = new VSFilesystem(capi, Mod.Info.ModID);
@@ -78,6 +77,11 @@ namespace BetterBooks
                 state = LoadingState.Waiting;
             };
 
+            view.OnBeginLoading += (_, _, _) =>
+            {
+                api.Logger.Notification($"OnBeginLoading");
+            };
+
             view.OnFailLoading +=
                 (ulong frameId,
                 bool isMainFrame,
@@ -89,11 +93,19 @@ namespace BetterBooks
                     api.Logger.Error($"{errorDomain} : {errorCode} : {description}");
                 };
 
-            view.URL = "file:///epub.html";
+            try
+            {
+                view.URL = "file:///epub.html";
+            }
+            catch (Exception e)
+            {
+                api.Logger.Error(e.Message);
+            }
+
             //view.URL = "https://google.com";
             state = LoadingState.Start;
 
-            api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
+            //api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
         }
 
         public void ClientOnGameTick(float dt)
