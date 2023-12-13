@@ -19,11 +19,6 @@ namespace BetterBooks
             loggerDelegates = GetNativeStruct();
         }
 
-        public void Dispose()
-        {
-            api.Logger.Notification("dispose");
-        }
-
         public ULLogger GetNativeStruct()
         {
             unsafe
@@ -54,6 +49,11 @@ namespace BetterBooks
                     break;
             }
             
+        }
+
+        public void Dispose()
+        {
+            api.Logger.Notification("VSLogger.Dispose()");
         }
     }
 }

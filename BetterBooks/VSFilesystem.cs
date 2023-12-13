@@ -24,11 +24,6 @@ namespace BetterBooks
             filesystemDelegates = GetNativeStruct();
         }
 
-        public void Dispose()
-        {
-            api.Logger.Notification("VSFilesystem.Dispose()");
-        }
-
         public ULFileSystem GetNativeStruct()
         {
             unsafe
@@ -79,6 +74,11 @@ namespace BetterBooks
                     return ULBuffer.CreateFromDataCopy(ptr, (nuint)data.Data.Length);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            api.Logger.Notification("VSFilesystem.Dispose()");
         }
     }
 }

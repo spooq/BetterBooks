@@ -52,13 +52,12 @@ namespace BetterBooks
             EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
             AppCoreMethods.SetPlatformFontLoader();
-            AppCoreMethods.ulEnablePlatformFileSystem(".");
 
+            //AppCoreMethods.ulEnablePlatformFileSystem(".");
             //AppCoreMethods.ulEnableDefaultLogger("log.txt");
-            logger = new VSLogger(capi);
-            ULPlatform.Logger = logger;
-            fs = new VSFilesystem(capi, Mod.Info.ModID);
-            ULPlatform.FileSystem = fs;
+
+            ULPlatform.Logger = new VSLogger(capi);
+            ULPlatform.FileSystem = new VSFilesystem(capi, Mod.Info.ModID);
 
             var cfg = new ULConfig();
             renderer = ULPlatform.CreateRenderer(cfg);
@@ -95,17 +94,17 @@ namespace BetterBooks
 
             try
             {
-                view.URL = "file:///epub.html";
+                //view.URL = "file:///simple.html";
+                view.URL = "https://google.com";
             }
             catch (Exception e)
             {
                 api.Logger.Error(e.Message);
             }
 
-            //view.URL = "https://google.com";
             state = LoadingState.Start;
 
-            //api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
+            api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
         }
 
         public void ClientOnGameTick(float dt)
@@ -154,7 +153,7 @@ namespace BetterBooks
             catch(Exception e) { capi.Logger.Error(e.Message); }
 
             if (!String.IsNullOrEmpty(jsEx))
-                capi.Logger.Error(jsEx);
+                capi.Logger.Error("Javascript error: " +jsEx);
         }
 
         public void writeBitmap()
