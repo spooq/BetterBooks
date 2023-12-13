@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using UltralightNet;
 using UltralightNet.Platform;
 using UltralightNet.Platform.HighPerformance;
@@ -13,30 +15,33 @@ namespace BetterBooks
 
         private string modID;
 
-        private ULFileSystem filesystemDelegates;
+        readonly GCHandle[]? handles;
+
+        public bool IsDisposed { get; private set; }
 
         public VSFilesystem(ICoreClientAPI api, string modID)
         {
             this.api = api;
             this.modID = modID;
 
-            filesystemDelegates = GetNativeStruct();
+            handles = new GCHandle[4];
+        }
+        public static nint AllocateDelegate<TDelegate>(TDelegate d, out GCHandle handle) where TDelegate : Delegate
+        {
+            handle = GCHandle.Alloc(d);
+            return Marshal.GetFunctionPointerForDelegate(d);
         }
 
-        public ULFileSystem GetNativeStruct()
+        public ULFileSystem? GetNativeStruct()
         {
             unsafe
             {
-                return new ULFileSystem
+                return new()
                 {
-                    FileExists = (delegate* unmanaged[Cdecl]<ULString*, bool>)
-                        Marshal.GetFunctionPointerForDelegate((ULString* path) => FileExists(path->ToString())),
-                    GetFileMimeType = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)
-                        Marshal.GetFunctionPointerForDelegate((ULString* path) => new ULString(GetFileMimeType(path->ToString())).Allocate()),
-                    GetFileCharset = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)
-                        Marshal.GetFunctionPointerForDelegate((ULString* path) => new ULString(GetFileCharset(path->ToString())).Allocate()),
-                    OpenFile = (delegate* unmanaged[Cdecl]<ULString*, ULBuffer>)
-                        Marshal.GetFunctionPointerForDelegate((ULString* path) => OpenFile(path->ToString()))
+                    FileExists = (delegate* unmanaged[Cdecl]<ULString*, bool>)AllocateDelegate((ULString* path) => FileExists(path->ToString()), out handles[0]),
+                    GetFileMimeType = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)AllocateDelegate((ULString* path) => new ULString(GetFileMimeType(path->ToString())).Allocate(), out handles[1]),
+                    GetFileCharset = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)AllocateDelegate((ULString* path) => new ULString(GetFileCharset(path->ToString())).Allocate(), out handles[2]),
+                    OpenFile = (delegate* unmanaged[Cdecl]<ULString*, ULBuffer>)AllocateDelegate((ULString* path) => OpenFile(path->ToString()), out handles[3])
                 };
             }
         }
@@ -78,6 +83,18 @@ namespace BetterBooks
         public void Dispose()
         {
             api.Logger.Notification("VSFilesystem.Dispose()");
+            if (IsDisposed) return;
+            if (handles is not null)
+            {
+                foreach (var handle in handles) if (handle.IsAllocated) handle.Free();
+            }
+
+            try { Dispose(); }
+            finally
+            {
+                GC.SuppressFinalize(this);
+                IsDisposed = true;
+            }
         }
     }
 }
