@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using UltralightNet;
 using UltralightNet.Platform.HighPerformance;
 using Vintagestory.API.Client;
@@ -10,23 +11,31 @@ namespace BetterBooks
     {
         public ICoreAPI api;
 
-        public ULLogger loggerDelegates;
+        readonly GCHandle[]? handles;
+
+        public bool IsDisposed { get; private set; }
 
         public VSLogger(ICoreClientAPI api)
         {
             this.api = api;
 
-            loggerDelegates = GetNativeStruct();
+            handles = new GCHandle[1];
         }
 
-        public ULLogger GetNativeStruct()
+        public static nint AllocateDelegate<TDelegate>(TDelegate d, out GCHandle handle) where TDelegate : Delegate
+        {
+            handle = GCHandle.Alloc(d);
+            return Marshal.GetFunctionPointerForDelegate(d);
+        }
+
+        public ULLogger? GetNativeStruct()
         {
             unsafe
             {
                 return new ULLogger
                 {
                     LogMessage = (delegate* unmanaged[Cdecl]<ULLogLevel, ULString*, void>)
-                        Marshal.GetFunctionPointerForDelegate((ULLogLevel logLevel, ULString* message) => LogMessage(logLevel, message->ToString()))
+                        AllocateDelegate((ULLogLevel logLevel, ULString* message) => LogMessage(logLevel, message->ToString()), out handles[0])
                 };
             }
         }
@@ -54,6 +63,18 @@ namespace BetterBooks
         public void Dispose()
         {
             api.Logger.Notification("VSLogger.Dispose()");
+            if (IsDisposed) return;
+            if (handles is not null)
+            {
+                foreach (var handle in handles) if (handle.IsAllocated) handle.Free();
+            }
+
+            try { Dispose(); }
+            finally
+            {
+                GC.SuppressFinalize(this);
+                IsDisposed = true;
+            }
         }
     }
 }

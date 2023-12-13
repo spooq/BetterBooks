@@ -26,6 +26,7 @@ namespace BetterBooks
 
             handles = new GCHandle[4];
         }
+
         public static nint AllocateDelegate<TDelegate>(TDelegate d, out GCHandle handle) where TDelegate : Delegate
         {
             handle = GCHandle.Alloc(d);

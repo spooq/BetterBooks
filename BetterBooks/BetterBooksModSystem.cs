@@ -55,7 +55,7 @@ namespace BetterBooks
             AppCoreMethods.ulEnableDefaultLogger("log.txt");
             //AppCoreMethods.ulEnablePlatformFileSystem(".");
 
-            //ULPlatform.Logger = new VSLogger(capi);
+            ULPlatform.Logger = new VSLogger(capi);
             fs = new VSFilesystem(capi, Mod.Info.ModID);
             ULPlatform.FileSystem = fs;
 
@@ -97,7 +97,7 @@ namespace BetterBooks
                 };
 
             state = LoadingState.Start;
-            view.URL = "file:///simple.html";
+            view.URL = "file:///epub.html";
 
             api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
         }
@@ -125,8 +125,8 @@ namespace BetterBooks
                         capi.Logger.Notification("ClientOnGameTick Waiting");
                         renderer.Update();
                         result = view.EvaluateScript("ready", out jsEx);
-                        //if (result == "loaded")
-                        state = LoadingState.Loaded;
+                        if (result == "loaded")
+                            state = LoadingState.Loaded;
                         break;
 
                     case LoadingState.Loaded:

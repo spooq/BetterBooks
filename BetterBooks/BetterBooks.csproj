@@ -68,8 +68,6 @@
   <None Remove="assets\betterbooks\config\examples.css" />
   <None Remove="assets\betterbooks\config\jszip.min.js" />
   <None Remove="assets\betterbooks\config\pg164-images-3.epub" />
-  <None Remove="assets\betterbooks\config\simple.html" />
-  <None Remove="assets\betterbooks\config\tokyo.jpg" />
   <None Remove="native\AppCore.dll" />
   <None Remove="native\Ultralight.dll" />
   <None Remove="native\UltralightCore.dll" />
