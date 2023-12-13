@@ -1,14 +1,30 @@
-﻿using System;
+﻿using Microsoft.Win32.SafeHandles;
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 
 namespace BetterBooks
 {
+    class EmbeddedDllSafeHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public EmbeddedDllSafeHandle(IntPtr handle)
+            : base(true)
+        {
+            SetHandle(handle);
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return true;
+        }
+    }
+
     public class EmbeddedDllClass
     {
         private static string tempFolder;
@@ -59,9 +75,9 @@ namespace BetterBooks
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
         static extern IntPtr LoadLibrary(string fileName);
 
-        public static void LoadDll(string dllName, ICoreAPI api)
+        public static SafeHandle LoadDll(string dllName, ICoreAPI api)
         {
-            if (RuntimeEnv.OS != OS.Windows) return;
+            if (RuntimeEnv.OS != OS.Windows) return null;
             if (tempFolder == null) throw new Exception("Cannot load embedded dlls before extracting them");
 
             string dllPath = Path.Combine(Path.GetTempPath(), tempFolder, dllName);
@@ -73,6 +89,8 @@ namespace BetterBooks
                 Exception e = new DllNotFoundException("Unable to load library: " + dllName + " from " + tempFolder, innerException);
                 api.Logger.Error($"Failed to load embedded DLL:\n{e}");
             }
+
+            return new EmbeddedDllSafeHandle(handle);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using UltralightNet;
 using UltralightNet.AppCore;
 using Vintagestory.API.Client;
@@ -27,6 +28,10 @@ namespace BetterBooks
         LoadingState state = LoadingState.Starting;
 
         public ICoreClientAPI capi;
+        private SafeHandle hUlCore;
+        private SafeHandle hWebCore;
+        private SafeHandle hUl;
+        private SafeHandle hAppCore;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
@@ -46,10 +51,10 @@ namespace BetterBooks
 
             // Sneak in native dlls
             EmbeddedDllClass.ExtractEmbeddedDlls();
-            EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
-            EmbeddedDllClass.LoadDll("WebCore.dll", api); //test
-            EmbeddedDllClass.LoadDll("Ultralight.dll", api);
-            EmbeddedDllClass.LoadDll("AppCore.dll", api);
+            hUlCore = EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
+            hWebCore = EmbeddedDllClass.LoadDll("WebCore.dll", api);
+            hUl = EmbeddedDllClass.LoadDll("Ultralight.dll", api);
+            hAppCore = EmbeddedDllClass.LoadDll("AppCore.dll", api);
 
             AppCoreMethods.SetPlatformFontLoader();
             AppCoreMethods.ulEnablePlatformFileSystem(".");
@@ -88,6 +93,12 @@ namespace BetterBooks
                     api.Logger.Error($"{errorDomain} : {errorCode} : {description}");
                 };
 
+            foreach (System.Diagnostics.ProcessModule mod in System.Diagnostics.Process.GetCurrentProcess().Modules)
+                mod.Disposed += (_, _) =>
+                {
+                    capi.Logger.Debug($"DISPOSED {mod.FileName} {mod.ModuleName} {mod.EntryPointAddress}");
+                };
+
             api.Event.RegisterGameTickListener(ClientOnGameTick, 1000);
 
             try
@@ -106,6 +117,9 @@ namespace BetterBooks
         {
             string jsEx = null;
             string result = null;
+
+            foreach (System.Diagnostics.ProcessModule mod in System.Diagnostics.Process.GetCurrentProcess().Modules)
+                capi.Logger.Debug($"{mod.FileName} {mod.ModuleName} {mod.EntryPointAddress}");
 
             try
             {
