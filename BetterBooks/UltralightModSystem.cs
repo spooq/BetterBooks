@@ -1,14 +1,51 @@
-﻿using System;
-using System.IO;
+﻿using ProtoBuf;
+using System;
+using System.Collections.Concurrent;
 using UltralightNet;
 using UltralightNet.AppCore;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
-namespace BetterBooks
+namespace VSUL
 {
-    public class BetterBooksModSystem : ModSystem
+    public class UltralightModSystem : ModSystem
     {
+        [ProtoContract]
+        public class WebRequest
+        {
+            public enum WebAction
+            {
+                CreateView,
+                DestroyView,
+                LoadUrl,
+            };
+
+            [ProtoMember(1)]
+            public WebAction Action { get; set; }
+
+            [ProtoMember(2)]
+            public int ViewHandle { get; set; }
+
+            [ProtoMember(3)]
+            public string Url { get; set; }
+        }
+
+        [ProtoContract]
+        public class WebResponse
+        {
+            public enum WebState
+            {
+                Start,
+                Waiting,
+                Loading,
+                Loaded,
+                Error
+            };
+        }
+
+        ConcurrentQueue<WebRequest> _requests = new();
+        ConcurrentQueue<WebResponse> _responses = new();
+
         public enum LoadingState
         {
             Start,
@@ -45,16 +82,17 @@ namespace BetterBooks
             api.Assets.Reload(AssetCategory.config);
 
             // Sneak in native dlls
+            EmbeddedDllClass.api = api;
             EmbeddedDllClass.ExtractEmbeddedDlls();
-            EmbeddedDllClass.LoadDll("UltralightCore.dll", api);
-            EmbeddedDllClass.LoadDll("WebCore.dll", api);
-            EmbeddedDllClass.LoadDll("Ultralight.dll", api);
-            EmbeddedDllClass.LoadDll("AppCore.dll", api);
+            EmbeddedDllClass.LoadDll("UltralightCore.dll");
+            EmbeddedDllClass.LoadDll("WebCore.dll");
+            EmbeddedDllClass.LoadDll("Ultralight.dll");
+            EmbeddedDllClass.LoadDll("AppCore.dll");
 
             AppCoreMethods.SetPlatformFontLoader();
 
             ULPlatform.Logger = new VSLogger(capi);
-            ULPlatform.FileSystem = new VSFilesystem(capi, Mod.Info.ModID);
+            ULPlatform.FileSystem = new VSFilesystem(capi);
 
             renderer = ULPlatform.CreateRenderer(new ULConfig());
 
@@ -64,7 +102,7 @@ namespace BetterBooks
                 EnableImages = true,
                 EnableJavaScript = true,
             };
-            view = renderer.CreateView(1200, 1000, viewCfg);
+            view = renderer.CreateView(1000, 1000, viewCfg);
 
             view.OnBeginLoading += (_, _, _) =>
             {
@@ -129,7 +167,14 @@ namespace BetterBooks
                     case LoadingState.Loaded:
                         capi.Logger.Notification("ClientOnGameTick Loaded");
                         renderer.Render();
-                        writeBitmap();
+                        ULSurface surface = view.Surface ?? throw new Exception("Surface not found, did you perhaps set ViewConfig.IsAccelerated to true?");
+                        ULBitmap bitmap = surface.Bitmap;
+                        //var path = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                        //bitmap.WritePng(Path.Combine(path, $"OUTPUT.png"));
+                        int textureSubId;
+                        TextureAtlasPosition texPos;
+                        capi.ItemTextureAtlas.AllocateTextureSpace(1000, 1000, out textureSubId, out texPos);
+                        capi.Render.Render2DTexture(textureSubId, 0, 0, 1000, 100);
                         state = LoadingState.Done;
                         break;
 
@@ -146,14 +191,6 @@ namespace BetterBooks
 
             if (!String.IsNullOrEmpty(jsEx))
                 capi.Logger.Error("Javascript error: " + jsEx);
-        }
-
-        public void writeBitmap()
-        {
-            ULSurface surface = view.Surface ?? throw new Exception("Surface not found, did you perhaps set ViewConfig.IsAccelerated to true?");
-            ULBitmap bitmap = surface.Bitmap;
-            var path = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-            bitmap.WritePng(Path.Combine(path, $"OUTPUT.png"));
         }
     }
 }

@@ -63,6 +63,9 @@
   <Content Include="assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </Content>
+  <Compile Remove="binold\**" />
+  <EmbeddedResource Remove="binold\**" />
+  <None Remove="binold\**" />
   <None Remove="assets\betterbooks\config\epub.html" />
   <None Remove="assets\betterbooks\config\epub.js" />
   <None Remove="assets\betterbooks\config\examples.css" />
@@ -90,6 +93,10 @@
   <EmbeddedResource Include="native\WebCore.dll">
     <CopyToOutputDirectory>Never</CopyToOutputDirectory>
   </EmbeddedResource>
+</ItemGroup>
+
+<ItemGroup>
+  <PackageReference Include="MimeMapping" Version="2.0.0" />
 </ItemGroup>
 
 <ItemGroup>

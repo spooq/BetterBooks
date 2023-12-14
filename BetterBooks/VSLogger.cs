@@ -5,13 +5,13 @@ using UltralightNet.Platform.HighPerformance;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
-namespace BetterBooks
+namespace VSUL
 {
     public class VSLogger : UltralightNet.Platform.ILogger
     {
         public ICoreAPI api;
 
-        readonly GCHandle[]? handles;
+        readonly GCHandle[] handles;
 
         public bool IsDisposed { get; private set; }
 
@@ -22,20 +22,13 @@ namespace BetterBooks
             handles = new GCHandle[1];
         }
 
-        public static nint AllocateDelegate<TDelegate>(TDelegate d, out GCHandle handle) where TDelegate : Delegate
-        {
-            handle = GCHandle.Alloc(d);
-            return Marshal.GetFunctionPointerForDelegate(d);
-        }
-
         public ULLogger? GetNativeStruct()
         {
             unsafe
             {
                 return new ULLogger
                 {
-                    LogMessage = (delegate* unmanaged[Cdecl]<ULLogLevel, ULString*, void>)
-                        AllocateDelegate((ULLogLevel logLevel, ULString* message) => LogMessage(logLevel, message->ToString()), out handles[0])
+                    LogMessage = (delegate* unmanaged[Cdecl]<ULLogLevel, ULString*, void>)Utility.AllocateDelegate((ULLogLevel logLevel, ULString* message) => LogMessage(logLevel, message->ToString()), out handles[0])
                 };
             }
         }
@@ -62,7 +55,7 @@ namespace BetterBooks
 
         public void Dispose()
         {
-            api.Logger.Notification("VSLogger.Dispose()");
+            api.Logger.Debug("VSLogger.Dispose()");
             if (IsDisposed) return;
             if (handles is not null)
             {

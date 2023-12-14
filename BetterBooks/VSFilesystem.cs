@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using UltralightNet;
 using UltralightNet.Platform;
@@ -7,31 +6,23 @@ using UltralightNet.Platform.HighPerformance;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
-namespace BetterBooks
+namespace VSUL
 {
     public class VSFilesystem : IFileSystem
     {
         public ICoreAPI api;
 
-        private string modID;
-
-        readonly GCHandle[]? handles;
+        private readonly GCHandle[] handles;
 
         public bool IsDisposed { get; private set; }
 
-        public VSFilesystem(ICoreClientAPI api, string modID)
+        public VSFilesystem(ICoreClientAPI api)
         {
             this.api = api;
-            this.modID = modID;
 
             handles = new GCHandle[4];
         }
 
-        public static nint AllocateDelegate<TDelegate>(TDelegate d, out GCHandle handle) where TDelegate : Delegate
-        {
-            handle = GCHandle.Alloc(d);
-            return Marshal.GetFunctionPointerForDelegate(d);
-        }
 
         public ULFileSystem? GetNativeStruct()
         {
@@ -39,38 +30,41 @@ namespace BetterBooks
             {
                 return new()
                 {
-                    FileExists = (delegate* unmanaged[Cdecl]<ULString*, bool>)AllocateDelegate((ULString* path) => FileExists(path->ToString()), out handles[0]),
-                    GetFileMimeType = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)AllocateDelegate((ULString* path) => new ULString(GetFileMimeType(path->ToString())).Allocate(), out handles[1]),
-                    GetFileCharset = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)AllocateDelegate((ULString* path) => new ULString(GetFileCharset(path->ToString())).Allocate(), out handles[2]),
-                    OpenFile = (delegate* unmanaged[Cdecl]<ULString*, ULBuffer>)AllocateDelegate((ULString* path) => OpenFile(path->ToString()), out handles[3])
+                    FileExists = (delegate* unmanaged[Cdecl]<ULString*, bool>)Utility.AllocateDelegate((ULString* path) => FileExists(path->ToString()), out handles[0]),
+                    GetFileMimeType = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)Utility.AllocateDelegate((ULString* path) => new ULString(GetFileMimeType(path->ToString())).Allocate(), out handles[1]),
+                    GetFileCharset = (delegate* unmanaged[Cdecl]<ULString*, ULString*>)Utility.AllocateDelegate((ULString* path) => new ULString(GetFileCharset(path->ToString())).Allocate(), out handles[2]),
+                    OpenFile = (delegate* unmanaged[Cdecl]<ULString*, ULBuffer>)Utility.AllocateDelegate((ULString* path) => OpenFile(path->ToString()), out handles[3])
                 };
             }
         }
 
         public bool FileExists(string path)
         {
-            bool result = api.Assets.Exists(new AssetLocation(modID, "config/" + path.ToLower()));
-            api.Logger.Notification("FileExists: " + path + " - " + (result ? "yes" : "no"));
-            return result;
+            var asset = Utility.UrlToAssetLocation(path);
+            bool exists = api.Assets.Exists(asset);
+            api.Logger.Debug($"FileExists: {path} => {asset.Path} => {exists}");
+            return exists;
         }
 
         public string GetFileCharset(string path)
         {
-            api.Logger.Notification("GetFileCharset: " + path);
-            return "utf-8";
+            string charset = "utf-8";
+            api.Logger.Debug($"GetFileCharset: {path} => charset {charset}");
+            return charset;
         }
 
         public string GetFileMimeType(string path)
         {
-            api.Logger.Notification("GetFileMimeType: " + path);
-            return "text/html";
+            string mimeType = MimeMapping.MimeUtility.GetMimeMapping(path);
+            api.Logger.Debug($"GetFileMimeType: {path} => mimetype {mimeType}");
+            return mimeType;
         }
 
         public ULBuffer OpenFile(string path)
         {
-            api.Logger.Notification("OpenFile: " + path);
-            var data = api.Assets.Get(new AssetLocation(modID, "config/" + path.ToLower()));
-            api.Logger.Notification("OpenFile: " + path + " length=" + data.Data.Length);
+            var asset = Utility.UrlToAssetLocation(path);
+            var data = api.Assets.Get(asset);
+            api.Logger.Debug($"FileExists: {path} => {asset.Path} => size {data.Data.Length}");
 
             unsafe
             {
@@ -83,7 +77,7 @@ namespace BetterBooks
 
         public void Dispose()
         {
-            api.Logger.Notification("VSFilesystem.Dispose()");
+            api.Logger.Debug("VSFilesystem.Dispose()");
             if (IsDisposed) return;
             if (handles is not null)
             {

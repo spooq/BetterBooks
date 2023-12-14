@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -7,10 +6,12 @@ using System.Runtime.InteropServices;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 
-namespace BetterBooks
+namespace VSUL
 {
-    public partial class EmbeddedDllClass
+    public class EmbeddedDllClass
     {
+        public static ICoreAPI api;
+
         private static string tempFolder;
 
         public static void ExtractEmbeddedDlls()
@@ -20,14 +21,17 @@ namespace BetterBooks
             string[] resourceNames = assembly.GetManifestResourceNames();
 
             foreach (var dllName in resourceNames)
-            {
                 ExtractEmbeddedDll(dllName);
-            }
         }
 
         public static void ExtractEmbeddedDll(string resourceName)
         {
-            if (RuntimeEnv.OS != OS.Windows) return;
+            if (RuntimeEnv.OS != OS.Windows)
+            {
+                api.Logger.Error("OS is not Windows.");
+                return;
+            }
+
             Assembly assembly = Assembly.GetExecutingAssembly();
             AssemblyName assemblyName = assembly.GetName();
             tempFolder ??= $"{assemblyName.Name}.{assemblyName.Version}";
@@ -54,25 +58,34 @@ namespace BetterBooks
             }
             if (alreadyExtracted) return;
             File.WriteAllBytes(dllPath, resourceBytes);
+
+            api.Logger.Debug($"Extracting {dllPath}");
         }
 
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
         static extern IntPtr LoadLibrary(string fileName);
 
-        public static IntPtr LoadDll(string dllName, ICoreAPI api)
+        public static IntPtr LoadDll(string dllName)
         {
-            if (RuntimeEnv.OS != OS.Windows) return IntPtr.Zero;
-            if (tempFolder == null) throw new Exception("Cannot load embedded dlls before extracting them");
+            if (RuntimeEnv.OS != OS.Windows)
+            {
+                api.Logger.Error("OS is not Windows.");
+                return IntPtr.Zero;
+            }
+
+            if (tempFolder == null)
+            {
+                api.Logger.Error("Cannot load embedded dlls before extracting them.");
+                return IntPtr.Zero;
+            }
 
             string dllPath = Path.Combine(Path.GetTempPath(), tempFolder, dllName);
             IntPtr handle = LoadLibrary(dllPath);
 
             if (handle == IntPtr.Zero)
-            {
-                Exception innerException = new Win32Exception();
-                Exception e = new DllNotFoundException("Unable to load library: " + dllName + " from " + tempFolder, innerException);
-                api.Logger.Error($"Failed to load embedded DLL:\n{e}");
-            }
+                api.Logger.Error($"Failed to load embedded DLL {dllPath}");
+            else
+                api.Logger.Debug($"Loaded {dllPath}");
 
             return handle;
         }

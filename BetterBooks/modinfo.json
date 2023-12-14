@@ -1,11 +1,11 @@
 {
     "type": "code",
-    "modid": "betterbooks",
-    "name": "BetterBooks",
+    "modid": "ultralight",
+    "name": "ultralight",
     "authors": [
         "Crabb"
     ],
-    "description": "To be added",
+    "description": "Integration of Ultralight web renderer",
     "version": "1.0.0",
     "dependencies": {
         "game": ""
